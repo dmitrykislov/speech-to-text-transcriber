@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 import tempfile
 import soundfile as sf
+from unittest.mock import patch
 from src.audio_loader import AudioLoader
 
 
@@ -40,3 +41,14 @@ class TestAudioLoader:
             result = AudioLoader.load_ogg(audio_path)
 
             assert isinstance(result, np.ndarray)
+
+    def test_load_ogg_corrupted_file_error(self):
+        """load_ogg raises RuntimeError when librosa.load() fails."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            audio_path = Path(tmpdir) / "corrupted.ogg"
+            audio_path.write_text("not audio data")
+
+            with patch('librosa.load') as mock_load:
+                mock_load.side_effect = Exception("Corrupted audio file")
+                with pytest.raises(RuntimeError, match="Failed to load OGG file"):
+                    AudioLoader.load_ogg(audio_path)
