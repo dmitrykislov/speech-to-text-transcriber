@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "ogg-to-text"
 version = "0.1.0"
 description = "Convert OGG audio file to text"
-requires-python = "==3.11.*"
+requires-python = "==3.14.*"
 dependencies = ["librosa>=0.10.0", "numpy>=1.24.0", "faster-whisper>=0.10.0"]
 
 [project.optional-dependencies]

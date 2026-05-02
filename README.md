@@ -31,7 +31,7 @@ transcription.txt in output_dir
 
 ## Technology Stack
 
-- **Language**: Python 3.11
+- **Language**: Python 3.14
 - **Audio processing**: librosa ≥0.10.0 (OGG decoding via libsndfile)
 - **Transcription model**: faster-whisper ≥0.10.0 (OpenAI Whisper large model)
 - **Numerical computing**: numpy ≥1.24.0
@@ -41,7 +41,7 @@ transcription.txt in output_dir
 ## Installation
 
 ### Prerequisites
-- Python 3.11
+- Python 3.14
 - pip or uv package manager
 
 ### Setup
