@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+import numpy as np
 from src.whisper_model import WhisperModel
 
 
@@ -43,3 +44,66 @@ class TestWhisperModel:
 
             assert model1 is model2
             mock_whisper.assert_called_once()
+
+    def test_transcribe_returns_dict_with_text_and_language(self):
+        """transcribe() returns dict with 'text' and 'language' fields."""
+        with patch('src.whisper_model.FasterWhisperModel') as mock_whisper_class:
+            mock_model = MagicMock()
+            mock_whisper_class.return_value = mock_model
+
+            mock_segment = MagicMock()
+            mock_segment.text = 'Hello world'
+            mock_segment.language = 'en'
+            mock_info = MagicMock()
+            mock_info.language = 'en'
+            mock_model.transcribe.return_value = ([mock_segment], mock_info)
+
+            model = WhisperModel()
+            result = model.transcribe('test.ogg')
+
+            assert isinstance(result, dict)
+            assert 'text' in result
+            assert 'language' in result
+            assert result['text'] == 'Hello world'
+            assert result['language'] == 'en'
+
+    def test_transcribe_detects_russian_language(self):
+        """transcribe() correctly detects and preserves Russian language."""
+        with patch('src.whisper_model.FasterWhisperModel') as mock_whisper_class:
+            mock_model = MagicMock()
+            mock_whisper_class.return_value = mock_model
+
+            mock_segment = MagicMock()
+            mock_segment.text = 'Привет мир'
+            mock_segment.language = 'ru'
+            mock_info = MagicMock()
+            mock_info.language = 'ru'
+            mock_model.transcribe.return_value = ([mock_segment], mock_info)
+
+            model = WhisperModel()
+            result = model.transcribe('russian_audio.ogg')
+
+            assert result['language'] == 'ru'
+            assert result['text'] == 'Привет мир'
+
+    def test_transcribe_detects_code_switching(self):
+        """transcribe() detects code-switching when multiple languages present."""
+        with patch('src.whisper_model.FasterWhisperModel') as mock_whisper_class:
+            mock_model = MagicMock()
+            mock_whisper_class.return_value = mock_model
+
+            mock_segment1 = MagicMock()
+            mock_segment1.text = 'Hello '
+            mock_segment1.language = 'en'
+            mock_segment2 = MagicMock()
+            mock_segment2.text = 'привет'
+            mock_segment2.language = 'ru'
+            mock_info = MagicMock()
+            mock_info.language = 'en'
+            mock_model.transcribe.return_value = ([mock_segment1, mock_segment2], mock_info)
+
+            model = WhisperModel()
+            result = model.transcribe('mixed_audio.ogg')
+
+            assert result['code_switching'] is True
+            assert result['text'] == 'Hello привет'
