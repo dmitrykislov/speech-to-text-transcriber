@@ -1,6 +1,6 @@
-# OGG-to-Text Converter
+# speech-to-text-transcriber
 
-Convert OGG Vorbis audio files to text using OpenAI's Whisper model with support for Russian language and code-switching detection.
+Offline speech-to-text CLI using OpenAI's Whisper (large-v3) via faster-whisper. Drop in an audio file and get a UTF-8 transcript. Auto-detects 99 languages, runs on CPU (Apple Silicon friendly), no GPU required.
 
 ## Features
 

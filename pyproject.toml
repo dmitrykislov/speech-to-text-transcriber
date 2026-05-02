@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ogg-to-text"
+name = "speech-to-text-transcriber"
 version = "0.1.0"
-description = "Convert OGG audio file to text"
+description = "Offline speech-to-text CLI using Whisper large-v3. Auto-detects 99 languages, runs on CPU."
 requires-python = "==3.14.*"
 dependencies = ["librosa>=0.10.0", "numpy>=1.24.0", "faster-whisper>=0.10.0"]
 
