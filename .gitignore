@@ -28,3 +28,22 @@ Thumbs.db
 
 # Worker worktrees (per-task isolation)
 .worktrees/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/

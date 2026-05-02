@@ -1,0 +1,11 @@
+version = 1
+requires-python = "==3.11.*"
+
+[[package]]
+name = "pytest"
+version = "7.4.3"
+source = { type = "registry", url = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/pytest-7.4.3.tar.gz", hash = "sha256:..." }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/pytest-7.4.3-py3-none-any.whl", hash = "sha256:..." }
+]
