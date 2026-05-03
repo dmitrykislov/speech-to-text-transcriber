@@ -47,8 +47,12 @@ For each audio file:
 ### Setup
 
 ```bash
-# Clone or navigate to project directory
+# Navigate to project directory
 cd speech-to-text-transcriber
+
+# Create and activate a virtualenv (required on systems with PEP 668 / externally managed Python)
+python -m venv .venv
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -57,30 +61,48 @@ pip install -r requirements.txt
 python -m pytest -v
 ```
 
+Re-activate the virtualenv (`source .venv/bin/activate`) in any new shell before running the CLI.
+
 ## Usage
+
+> Output rule (both modes): each transcript is written **next to its source audio file**, with the same basename and a `.txt` extension. The CLI never writes outputs to a separate `output/` folder or to the current working directory.
 
 ### Basic Usage
 
 ```bash
-# Single file: transcript saved to <audio_basename>.txt next to it
+# Single file → writes <audio_basename>.txt in the SAME directory as the audio file
 python -m src.main <audio_file>
 
-# Directory: every audio file inside (non-recursive) is transcribed,
-# each transcript saved as <audio_basename>.txt next to its source
+# Directory → transcribes every audio file directly inside it (non-recursive),
+# writing each <audio_basename>.txt next to its source
 python -m src.main <directory>
 ```
 
 ### Examples
 
-```bash
-# Single file
-python -m src.main ~/Downloads/voicenote.ogg
-# → ~/Downloads/voicenote.txt
+**Single file** — output lands beside the input:
 
-# Batch a directory of voice notes
-python -m src.main ~/Downloads/voicenotes/
-# → ~/Downloads/voicenotes/<each>.txt
+```bash
+python -m src.main ~/Downloads/voicenote.ogg
+# writes → ~/Downloads/voicenote.txt
+
+# Paths with spaces: quote them or escape the spaces (zsh / bash)
+python -m src.main "~/Downloads/{file}"
+# writes → ~/Downloads/{file}.txt
 ```
+
+**Directory** — every audio file inside gets a sibling `.txt`:
+
+```bash
+python -m src.main ~/Downloads/
+# Given:                                  Writes:
+#   ~/Downloads/a.ogg     →        ~/Downloads/a.txt
+#   ~/Downloads/b.mp3     →        ~/Downloads/b.txt
+#   ~/Downloads/c.m4a     →        ~/Downloads/c.txt
+#   ~/Downloads/sub/d.ogg →        (ignored — scan is non-recursive)
+```
+
+The Whisper model is loaded once and reused across every file in the batch.
 
 ### Command-line Arguments
 
