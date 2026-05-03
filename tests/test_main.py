@@ -82,6 +82,19 @@ class TestDiscoverAudioFiles:
         for ext in ('.ogg', '.mp3', '.wav', '.flac', '.m4a', '.opus'):
             assert ext in AUDIO_EXTENSIONS
 
+    def test_supported_extensions_match_documented_set(self):
+        """README publishes this exact list — keep code and docs in sync."""
+        documented = {
+            '.ogg', '.oga', '.opus',
+            '.mp3', '.wav', '.flac',
+            '.m4a', '.aac', '.aiff', '.au', '.wma',
+        }
+        assert AUDIO_EXTENSIONS == documented, (
+            f"AUDIO_EXTENSIONS drifted from README. "
+            f"Code-only: {AUDIO_EXTENSIONS - documented}. "
+            f"README-only: {documented - AUDIO_EXTENSIONS}."
+        )
+
 
 class TestMainSingleFile:
     """main() called with a single audio-file path."""

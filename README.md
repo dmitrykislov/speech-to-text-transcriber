@@ -4,12 +4,13 @@ Offline speech-to-text CLI using OpenAI's Whisper (large-v3) via faster-whisper.
 
 ## Features
 
-- **OGG Vorbis audio support**: Decode OGG audio files using librosa
-- **Multilingual transcription**: Automatic language detection with explicit Russian support
-- **Code-switching detection**: Identifies when multiple languages appear in the same audio
-- **High-quality output**: Uses Whisper's large model for optimal transcription accuracy
-- **CPU-optimized**: Runs on CPU (M1 Max compatible) with cached model downloads
-- **UTF-8 text output**: Proper encoding for Cyrillic and international characters
+- **Single file or whole directory**: pass a path; if it's a directory every audio file inside is transcribed in one batch (Whisper model loaded once and reused).
+- **Multi-format input**: OGG, MP3, WAV, FLAC, M4A, Opus, AAC, AIFF, AU, WMA — anything `librosa.load()` can decode.
+- **Transcripts saved next to the source audio**: `clip.ogg` → `clip.txt` in the same directory.
+- **Multilingual**: Whisper auto-detects 99 languages; Russian (Cyrillic) verified end-to-end.
+- **Code-switching field**: reports whether multiple languages were detected.
+- **CPU-only**: runs on Apple Silicon and other CPUs, no GPU required; model cached after first download.
+- **UTF-8 output**: Cyrillic and other non-ASCII text round-trip cleanly.
 
 ## Architecture
 
@@ -31,10 +32,10 @@ For each audio file:
 ## Technology Stack
 
 - **Language**: Python 3.14
-- **Audio processing**: librosa ≥0.10.0 (OGG decoding via libsndfile)
-- **Transcription model**: faster-whisper ≥0.10.0 (OpenAI Whisper large model)
+- **Audio decoding**: librosa ≥0.10.0 (libsndfile + audioread/ffmpeg fallback)
+- **Transcription model**: faster-whisper ≥0.10.0 running OpenAI Whisper **large-v3**
 - **Numerical computing**: numpy ≥1.24.0
-- **Model caching**: ~/.cache/huggingface (auto-downloaded on first run)
+- **Model caching**: `~/.cache/huggingface` (auto-downloaded on first run)
 - **Logging**: Python logging module (file + console)
 
 ## Installation
@@ -170,16 +171,16 @@ Empty list if the directory contains no recognized audio files.
 - **Auto-detection**: Whisper automatically detects language from audio
 - **Russian (ru)**: Fully supported with Cyrillic character handling
 - **English (en)**: Fully supported
-- **99+ languages**: Supported by Whisper large model
+- **99+ languages**: Supported by Whisper large-v3
 - **Code-switching**: Detects and reports when multiple languages appear in same audio
 
 ## Model Details
 
-- **Model**: OpenAI Whisper (large variant)
-- **Size**: ~3 GB (downloaded to ~/.cache/huggingface on first run)
-- **Device**: CPU (optimized for M1 Max)
-- **Compute type**: default (float32)
-- **First run**: Model download may take 2–5 minutes depending on network
+- **Model**: OpenAI Whisper **large-v3** (HF id `Systran/faster-whisper-large-v3`)
+- **Size**: ~3 GB (downloaded to `~/.cache/huggingface` on first run)
+- **Device**: CPU (works on Apple Silicon; CUDA users can change `device` in `whisper_model.py`)
+- **Compute type**: `default` — on CPU this is converted from fp16 to fp32 at load time
+- **First run**: model download may take 2–5 minutes depending on network
 
 ## Troubleshooting
 
