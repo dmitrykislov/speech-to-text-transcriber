@@ -14,19 +14,18 @@ Offline speech-to-text CLI using OpenAI's Whisper (large-v3) via faster-whisper.
 ## Architecture
 
 ```
-Input OGG File
+Input: file or directory
       ↓
-AudioLoader (librosa)
+_discover_audio_files (filters by extension)
       ↓
-numpy float32 array (mono, original sample rate)
-      ↓
-WhisperModel (faster-whisper, large model, CPU)
-      ↓
-Transcription dict: {text, language, code_switching}
-      ↓
-TextWriter (UTF-8)
-      ↓
-transcription.txt in output_dir
+For each audio file:
+    AudioLoader (librosa) → numpy float32 mono
+        ↓
+    WhisperModel (faster-whisper, large-v3, CPU)
+        ↓
+    {text, language, code_switching}
+        ↓
+    TextWriter (UTF-8) → <audio_basename>.txt next to source
 ```
 
 ## Technology Stack
@@ -48,7 +47,7 @@ transcription.txt in output_dir
 
 ```bash
 # Clone or navigate to project directory
-cd ogg-to-text
+cd speech-to-text-transcriber
 
 # Install dependencies
 pip install -r requirements.txt
@@ -62,43 +61,55 @@ python -m pytest -v
 ### Basic Usage
 
 ```bash
-python -m src.main <input_ogg_file> <output_directory>
+# Single file: transcript saved to <audio_basename>.txt next to it
+python -m src.main <audio_file>
+
+# Directory: every audio file inside (non-recursive) is transcribed,
+# each transcript saved as <audio_basename>.txt next to its source
+python -m src.main <directory>
 ```
 
-### Example
+### Examples
 
 ```bash
-# Transcribe Russian audio
-python -m src.main ./samples/russian_speech.ogg ./output
+# Single file
+python -m src.main ~/Downloads/voicenote.ogg
+# → ~/Downloads/voicenote.txt
 
-# Output: ./output/transcription.txt
+# Batch a directory of voice notes
+python -m src.main ~/Downloads/voicenotes/
+# → ~/Downloads/voicenotes/<each>.txt
 ```
 
 ### Command-line Arguments
 
 | Argument | Type | Description |
 |----------|------|-------------|
-| `input_file` | str (path) | Path to OGG Vorbis audio file (required) |
-| `output_dir` | str (path) | Directory where transcription.txt will be written (required) |
+| `input_path` | str (path) | Audio file OR directory containing audio files (required). Directory scan is non-recursive. |
 
 ## Supported Audio Formats
 
-- **OGG Vorbis** (.ogg, .oga): Primary supported format
-- **Sample rate**: Any (librosa resamples to model's native rate internally)
+The CLI dispatches to `librosa.load()`, so any format librosa can decode works. The discovered extensions for directory mode are:
+
+`.ogg`, `.oga`, `.opus`, `.mp3`, `.wav`, `.flac`, `.m4a`, `.aac`, `.aiff`, `.au`, `.wma`
+
+- **Sample rate**: Any (librosa keeps native rate; faster-whisper resamples internally)
 - **Channels**: Mono or stereo (converted to mono automatically)
 - **Bit depth**: 16-bit, 24-bit, 32-bit float supported
 
+> Note: MP3 / M4A / WMA may need `ffmpeg` on PATH (audioread fallback). OGG / WAV / FLAC work out of the box via libsndfile.
+
 ## Output
 
-### Output File Location
+Each audio file produces a sibling `.txt` file with the same basename:
 
 ```
-<output_dir>/transcription.txt
+~/Downloads/clip.ogg          →  ~/Downloads/clip.txt
+~/Downloads/voicenotes/a.mp3  →  ~/Downloads/voicenotes/a.txt
+~/Downloads/voicenotes/b.wav  →  ~/Downloads/voicenotes/b.txt
 ```
 
-### Output File Format
-
-Plain text file (UTF-8 encoding) containing the transcribed text.
+Files are UTF-8 plain text.
 
 **Example output** (Russian audio):
 ```
@@ -107,23 +118,32 @@ Plain text file (UTF-8 encoding) containing the transcribed text.
 
 ### Return Value (Python API)
 
-The `main()` function returns a dictionary:
+`main()` returns a list of dicts, one per transcribed file:
 
 ```python
-{
-    'text': str,              # Transcribed text
-    'language': str,          # Detected language code (e.g., 'ru', 'en')
-    'code_switching': bool    # True if multiple languages detected
-}
+[
+    {
+        'input': Path,            # Source audio path
+        'output': Path,           # Path to written .txt
+        'text': str,              # Transcribed text
+        'language': str,          # Detected language code (e.g., 'ru', 'en')
+        'code_switching': bool,   # True if multiple languages detected
+    },
+    ...
+]
 ```
+
+Empty list if the directory contains no recognized audio files.
 
 ## Logging
 
 ### Log File Location
 
 ```
-~/agent-artifacts/<output_dir_name>/app.log
+~/agent-artifacts/<dir_name>/app.log
 ```
+
+`<dir_name>` is the input directory's name (or the parent directory's name when a single file is passed).
 
 ### Log Levels
 
@@ -133,13 +153,16 @@ The `main()` function returns a dictionary:
 ### Example Log Output
 
 ```
-2025-02-03 14:22:15,123 - INFO - Starting transcription: input=/path/to/audio.ogg, output_dir=/path/to/output
-2025-02-03 14:22:15,456 - INFO - Loading OGG audio file
-2025-02-03 14:22:15,789 - INFO - Audio loaded: 160000 samples
-2025-02-03 14:22:15,890 - INFO - Initializing Whisper model
-2025-02-03 14:22:45,123 - INFO - Transcription complete: language=ru, text_length=245
-2025-02-03 14:22:45,456 - INFO - Saving transcription to /path/to/output/transcription.txt
-2025-02-03 14:22:45,789 - INFO - Transcription saved successfully
+2026-05-03 14:22:15 - INFO - Found 3 audio file(s) to transcribe
+2026-05-03 14:22:15 - INFO - Initializing Whisper model
+2026-05-03 14:22:45 - INFO - [1/3] Loading audio: /path/to/voicenotes/a.ogg
+2026-05-03 14:22:45 - INFO - Audio loaded: 160000 samples
+2026-05-03 14:22:45 - INFO - Transcribing audio
+2026-05-03 14:23:10 - INFO - Transcription complete: language=ru, text_length=245
+2026-05-03 14:23:10 - INFO - Saving transcription to /path/to/voicenotes/a.txt
+2026-05-03 14:23:10 - INFO - Transcription saved successfully
+2026-05-03 14:23:10 - INFO - [2/3] Loading audio: /path/to/voicenotes/b.mp3
+...
 ```
 
 ## Language Support
@@ -160,16 +183,20 @@ The `main()` function returns a dictionary:
 
 ## Troubleshooting
 
-### FileNotFoundError: Audio file not found
-- Verify the input file path is correct and file exists
+### FileNotFoundError: Input path not found
+- Verify the path (file or directory) is correct and exists
 - Use absolute paths if relative paths fail
 
+### Directory passed but nothing transcribed
+- The directory scan is non-recursive — files in subdirectories are ignored
+- Check that file extensions match the supported list (case-insensitive)
+
 ### RuntimeError: Failed to load OGG file
-- Ensure file is valid OGG Vorbis format (not MP3, WAV, etc.)
-- Check file is not corrupted: `file <filename>` should show "Ogg Vorbis audio"
+- For non-OGG formats (MP3, M4A, WMA), make sure `ffmpeg` is on PATH
+- Check the file isn't corrupted: `file <filename>` should report a recognizable audio container
 
 ### IOError: Failed to write text to ...
-- Verify output directory exists or is writable
+- Verify the audio file's parent directory is writable
 - Check disk space is available
 
 ### Model download fails
